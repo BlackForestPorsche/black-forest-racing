@@ -3,10 +3,16 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      android_only:
+        description: 'Only attach the Android APK to the existing release for package.json version'
+        type: boolean
+        default: false
 permissions:
   contents: write
 jobs:
   build:
+    if: ${{ !inputs.android_only }}
     strategy:
       max-parallel: 1
       matrix:
@@ -24,3 +30,18 @@ jobs:
         env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then npx electron-builder --win --x64 --publish always; else npx electron-builder --linux --x64 --publish always; fi
+  android:
+    # The APK is built and signed off-GitHub (signing key never leaves the build box) and committed as android/*.apk.b64.
+    needs: build
+    if: ${{ always() && (needs.build.result == 'success' || inputs.android_only) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Attach Android APK to the release
+        shell: bash
+        env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+        run: |
+          V=$(node -p "require('./package.json').version")
+          for f in android/*.apk.b64; do base64 -d "$f" > "${f%.b64}"; done
+          ls -la android/*.apk
+          gh release upload "v$V" android/*.apk --clobber
