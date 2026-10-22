@@ -51,7 +51,7 @@ function create() {
     fullscreen: !process.env.BFR_TEST && (process.argv.includes('--fullscreen')),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      additionalArguments: ['--bfr-dpr=' + dpr],
+      additionalArguments: ['--bfr-dpr=' + dpr, '--bfr-ver=' + (require('./package.json').bfrDisplayVersion || ('v' + app.getVersion()))],
       backgroundThrottling: false, contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false,
     },
   });
@@ -120,10 +120,17 @@ if (process.env.BFR_TEST) {
     await new Promise(r => win.webContents.once('did-finish-load', r));
     await wait(8000);
     fs.writeFileSync(path.join(out, 'menu.png'), (await win.webContents.capturePage()).toPNG());
-    const info = await win.webContents.executeJavaScript(`({dpr:devicePixelRatio,desk:window.__BFR_DESKTOP,gl:!!document.createElement('canvas').getContext('webgl'),renderer:(()=>{try{const g=document.createElement('canvas').getContext('webgl');const x=g.getExtension('WEBGL_debug_renderer_info');return g.getParameter(x.UNMASKED_RENDERER_WEBGL)}catch(e){return String(e)}})()})`);
+    const info = await win.webContents.executeJavaScript(`({appVer:window.BFR_APP_VERSION,label:[...document.querySelectorAll('body *')].filter(e=>!e.children.length&&/v1\\.2\\.01/.test(e.textContent)).map(e=>e.textContent.trim()).slice(0,3),dpr:devicePixelRatio,desk:window.__BFR_DESKTOP,gl:!!document.createElement('canvas').getContext('webgl'),renderer:(()=>{try{const g=document.createElement('canvas').getContext('webgl');const x=g.getExtension('WEBGL_debug_renderer_info');return g.getParameter(x.UNMASKED_RENDERER_WEBGL)}catch(e){return String(e)}})()})`);
     for (const k of ['Enter','Enter']) { win.webContents.sendInputEvent({type:'keyDown',keyCode:k}); win.webContents.sendInputEvent({type:'keyUp',keyCode:k}); await wait(2500); }
     fs.writeFileSync(path.join(out, 'home.png'), (await win.webContents.capturePage()).toPNG());
-    info.attractLeft = await win.webContents.executeJavaScript(`[...document.querySelectorAll('.arcPress')].map(e=>getComputedStyle(e.closest('div[class]').parentElement).display+':'+e.parentElement.className)`).catch(e=>e.message);
+    info.homeLabel = await win.webContents.executeJavaScript(`(()=>{const e=document.getElementById('bfrVer');return e?[e.textContent,getComputedStyle(e).display]:null})()`).catch(e=>e.message);
+    if (process.env.BFR_TEST_HOME) {
+      await win.webContents.executeJavaScript(`try{useProfile('Smoke');document.querySelectorAll('.ov,.overlay,.modal').forEach(e=>{});goHome();}catch(e){}`).catch(()=>{});
+      await wait(6000);
+      info.screens = await win.webContents.executeJavaScript(`[...document.body.children].filter(e=>getComputedStyle(e).display!=='none'&&e.offsetWidth>300).map(e=>e.id||e.className).slice(0,8)`).catch(e=>e.message);
+      fs.writeFileSync(path.join(out, 'homescreen.png'), (await win.webContents.capturePage()).toPNG());
+      info.homeLabel2 = await win.webContents.executeJavaScript(`(()=>{const e=document.getElementById('bfrVer');return e?[e.textContent,getComputedStyle(e).display]:null})()`).catch(e=>e.message);
+    }
     let started;
     try { started = await win.webContents.executeJavaScript(`(()=>{startRace(0,true);return !!race})()`); } catch (e) { log.push('startRace threw: ' + e.message); }
     await wait(25000);

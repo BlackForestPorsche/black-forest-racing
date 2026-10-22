@@ -4,3 +4,5 @@ const a = process.argv.find(s => s.startsWith('--bfr-dpr='));
 const dpr = a ? parseFloat(a.split('=')[1]) : 0;
 if (dpr > 0) Object.defineProperty(window, 'devicePixelRatio', { get: () => dpr, configurable: true });
 window.__BFR_DESKTOP = 1;
+const v = process.argv.find(s => s.startsWith('--bfr-ver='));
+if (v) window.BFR_APP_VERSION = v.slice(10);
