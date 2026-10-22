@@ -1,0 +1,26 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      max-parallel: 1
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Decode icons
+        run: node -e "const f=require('fs');for(const n of ['icon.png','icon.ico'])f.writeFileSync(n,Buffer.from(f.readFileSync(n+'.b64','utf8'),'base64'))"
+      - name: Build and publish to GitHub Releases
+        shell: bash
+        env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then npx electron-builder --win --x64 --publish always; else npx electron-builder --linux --x64 --publish always; fi
