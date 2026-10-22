@@ -35,17 +35,34 @@ function create() {
   // scaled devicePixelRatio; the canvas is then stretched to fill the window.
   const dpr = +(d.scaleFactor * rs).toFixed(3);
 
+  // Windowed by default: last saved size/position, else 80% of the work area (at least 1600x900 if it fits), centered.
+  const statePath = path.join(app.getPath('userData'), 'window-state.json');
+  let st = {}; try { st = JSON.parse(fs.readFileSync(statePath, 'utf8')); } catch {}
+  const wa = d.workArea;
+  const defW = Math.min(wa.width, Math.max(Math.round(wa.width * 0.8), Math.min(1600, wa.width)));
+  const defH = Math.min(wa.height, Math.max(Math.round(wa.height * 0.8), Math.min(900, wa.height)));
+  const onScreen = st.width && screen.getAllDisplays().some(x => st.x >= x.bounds.x - 50 && st.y >= x.bounds.y - 50 && st.x < x.bounds.x + x.bounds.width && st.y < x.bounds.y + x.bounds.height);
   win = new BrowserWindow({
-    width: Math.min(1600, d.workAreaSize.width), height: Math.min(900, d.workAreaSize.height),
+    width: onScreen ? st.width : defW, height: onScreen ? st.height : defH,
+    x: onScreen ? st.x : undefined, y: onScreen ? st.y : undefined, center: !onScreen,
+    minWidth: 800, minHeight: 450, resizable: true,
     title: 'Black Forest Racing', icon: path.join(__dirname, 'icon.png'),
     backgroundColor: '#000000', show: false, autoHideMenuBar: true,
-    fullscreen: !process.argv.includes('--windowed') && s.fullscreen !== false && !process.env.BFR_TEST,
+    fullscreen: !process.env.BFR_TEST && (process.argv.includes('--fullscreen')),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       additionalArguments: ['--bfr-dpr=' + dpr],
       backgroundThrottling: false, contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false,
     },
   });
+  if (onScreen && st.maximized) win.maximize();
+  const saveState = () => {
+    try {
+      const b = win.getNormalBounds();
+      fs.writeFileSync(statePath, JSON.stringify({ ...b, maximized: win.isMaximized(), fullscreen: win.isFullScreen() }));
+    } catch {}
+  };
+  win.on('close', saveState);
   Menu.setApplicationMenu(null);
   win.once('ready-to-show', () => win.show());
   win.webContents.on('before-input-event', (e, i) => {
@@ -112,7 +129,7 @@ if (process.env.BFR_TEST) {
     await wait(25000);
     const raceInfo = await win.webContents.executeJavaScript(`({race:!!race, t:race&&race.t, canvas:[cv.width,cv.height]})`).catch(e => ({ err: e.message }));
     fs.writeFileSync(path.join(out, 'race.png'), (await win.webContents.capturePage()).toPNG());
-    fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ info, started, raceInfo, errors: log }, null, 1));
+    fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ bounds: win.getBounds(), fullscreen: win.isFullScreen(), info, started, raceInfo, errors: log }, null, 1));
     app.exit(0);
   });
 }
