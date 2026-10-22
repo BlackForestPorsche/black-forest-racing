@@ -1,0 +1,104 @@
+{
+ "name": "black-forest-racing",
+ "productName": "Black Forest Racing",
+ "version": "1.0.30",
+ "description": "Black Forest Racing slot car game",
+ "author": "Black Forest Automotive <service@blackforestautomotive.com>",
+ "homepage": "https://blackforestautomotive.com",
+ "main": "main.js",
+ "license": "UNLICENSED",
+ "devDependencies": {
+  "electron": "33.4.11",
+  "electron-builder": "25.1.8"
+ },
+ "build": {
+  "appId": "com.blackforestautomotive.racing",
+  "productName": "Black Forest Racing",
+  "files": [
+   "main.js",
+   "preload.js",
+   "game.html",
+   "icon.png",
+   "package.json"
+  ],
+  "asar": true,
+  "win": {
+   "icon": "icon.ico",
+   "target": [
+    {
+     "target": "nsis",
+     "arch": [
+      "x64"
+     ]
+    },
+    {
+     "target": "zip",
+     "arch": [
+      "x64"
+     ]
+    }
+   ],
+   "artifactName": "BlackForestRacing-${version}-win-x64-portable.${ext}",
+   "extraFiles": [
+    {
+     "from": "Create Desktop Shortcut.bat",
+     "to": "Create Desktop Shortcut.bat"
+    }
+   ]
+  },
+  "nsis": {
+   "oneClick": false,
+   "perMachine": false,
+   "allowToChangeInstallationDirectory": true,
+   "createDesktopShortcut": true,
+   "createStartMenuShortcut": true,
+   "shortcutName": "Black Forest Racing",
+   "installerIcon": "icon.ico",
+   "uninstallerIcon": "icon.ico",
+   "artifactName": "BlackForestRacing-${version}-win-x64-Setup.${ext}"
+  },
+  "linux": {
+   "icon": "icon.png",
+   "category": "Game",
+   "executableName": "black-forest-racing",
+   "target": [
+    {
+     "target": "AppImage",
+     "arch": [
+      "x64"
+     ]
+    },
+    {
+     "target": "deb",
+     "arch": [
+      "x64"
+     ]
+    }
+   ],
+   "artifactName": "BlackForestRacing-${version}-linux-${arch}.${ext}",
+   "desktop": {
+    "Name": "Black Forest Racing",
+    "Comment": "Black Forest Racing slot car game"
+   }
+  },
+  "deb": {
+   "packageName": "black-forest-racing"
+  },
+  "electronLanguages": [
+   "en-US"
+  ],
+  "compression": "maximum",
+  "publish": [
+   {
+    "provider": "github",
+    "owner": "BlackForestPorsche",
+    "repo": "black-forest-racing",
+    "releaseType": "release"
+   }
+  ]
+ },
+ "dependencies": {
+  "electron-updater": "^6.8.9"
+ },
+ "bfrUpdateUrl": ""
+}
