@@ -1,7 +1,7 @@
 {
  "name": "black-forest-racing",
  "productName": "Black Forest Racing",
- "version": "1.2.2",
+ "version": "1.2.3",
  "description": "Black Forest Racing slot car game",
  "author": "Black Forest Automotive <service@blackforestautomotive.com>",
  "homepage": "https://blackforestautomotive.com",
@@ -101,5 +101,5 @@
   "electron-updater": "^6.8.9"
  },
  "bfrUpdateUrl": "",
- "bfrDisplayVersion": "v1.2.02"
+ "bfrDisplayVersion": "v1.2.03"
 }
