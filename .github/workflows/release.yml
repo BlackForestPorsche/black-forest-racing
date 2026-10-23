@@ -37,11 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Attach Android APK to the release
+      - name: Attach Android APK and Android game content to the release
         shell: bash
         env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
         run: |
           V=$(node -p "require('./package.json').version")
           for f in android/*.apk.b64; do base64 -d "$f" > "${f%.b64}"; done
           ls -la android/*.apk
-          gh release upload "v$V" android/*.apk --clobber
+          gh release upload "v$V" android/*.apk android/android-game.html --clobber
